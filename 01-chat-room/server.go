@@ -6,32 +6,32 @@ import (
 
 // ClientManager is a server side data structure
 type ClientManager struct {
-	clients    map[*Client]bool
-	broadcast  chan []byte
-	register   chan *Client
-	unregister chan *Client
+	Clients    map[*Client]bool
+	Broadcast  chan []byte
+	Register   chan *Client
+	Unregister chan *Client
 }
 
 // Start the server worker thread
 func (manager *ClientManager) Start() {
 	for {
 		select {
-		case conn := <-manager.register:
-			manager.clients[conn] = true
+		case conn := <-manager.Register:
+			manager.Clients[conn] = true
 			fmt.Println("Accepted a new conection")
-		case conn := <-manager.unregister:
-			if _, ok := manager.clients[conn]; ok {
-				close(conn.data)
-				delete(manager.clients, conn)
+		case conn := <-manager.Unregister:
+			if _, ok := manager.Clients[conn]; ok {
+				close(conn.Data)
+				delete(manager.Clients, conn)
 				fmt.Println("Closed a connection")
 			}
-		case message := <-manager.broadcast:
-			for conn := range manager.clients {
+		case message := <-manager.Broadcast:
+			for conn := range manager.Clients {
 				select {
-				case conn.data <- message:
+				case conn.Data <- message:
 				default:
-					close(conn.data)
-					delete(manager.clients, conn)
+					close(conn.Data)
+					delete(manager.Clients, conn)
 				}
 			}
 		}
@@ -42,29 +42,29 @@ func (manager *ClientManager) Start() {
 func (manager *ClientManager) Receive(client *Client) {
 	for {
 		message := make([]byte, 4096)
-		length, err := client.socket.Read(message)
+		length, err := client.Socket.Read(message)
 		if err != nil {
-			manager.unregister <- client
-			client.socket.Close()
+			manager.Unregister <- client
+			client.Socket.Close()
 			break
 		}
 		if length > 0 {
 			fmt.Printf("Received: %v", string(message))
-			manager.broadcast <- message
+			manager.Broadcast <- message
 		}
 	}
 }
 
 // Send writes data to client. This is one per client
 func (manager *ClientManager) Send(client *Client) {
-	defer client.socket.Close()
+	defer client.Socket.Close()
 	for {
 		select {
-		case message, ok := <-client.data:
+		case message, ok := <-client.Data:
 			if !ok {
 				return
 			}
-			client.socket.Write(message)
+			client.Socket.Write(message)
 		}
 	}
 }

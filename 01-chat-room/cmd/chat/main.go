@@ -17,6 +17,8 @@ func main() {
 	port := flag.Int("port", 6741, "port number for chat server")
 	name := flag.String("name", "chat-server", "name of client or server")
 
+	flag.Parse()
+
 	if strings.ToLower(*mode) == "server" {
 		startServerMode(*port)
 	} else {
@@ -31,10 +33,10 @@ func startServerMode(port int) {
 		log.Fatalf("could not start chat server: %v", err)
 	}
 	manager := chat.ClientManager{
-		clients:    make(map[*chat.Client]bool),
-		broadcast:  make(chan []byte),
-		register:   make(chan *chat.Client),
-		unregister: make(chan *chat.Client),
+		Clients:    make(map[*chat.Client]bool),
+		Broadcast:  make(chan []byte),
+		Register:   make(chan *chat.Client),
+		Unregister: make(chan *chat.Client),
 	}
 	go manager.Start()
 	for {
@@ -43,10 +45,10 @@ func startServerMode(port int) {
 			log.Panicf("could not accept connection: %v", err)
 		}
 		client := &chat.Client{
-			socket: conn,
-			data:   make(chan []byte),
+			Socket: conn,
+			Data:   make(chan []byte),
 		}
-		manager.register <- client
+		manager.Register <- client
 		go manager.Receive(client)
 		go manager.Send(client)
 	}
@@ -59,8 +61,8 @@ func startClientMode(port int, name string) {
 		log.Fatalf("cannot connect to chat server; shuttingdown...: %v", err)
 	}
 	client := &chat.Client{
-		name:   name,
-		socket: conn,
+		Name:   name,
+		Socket: conn,
 	}
 	go client.Receive()
 	reader := bufio.NewReader(os.Stdin)
