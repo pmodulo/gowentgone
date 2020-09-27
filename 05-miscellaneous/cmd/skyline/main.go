@@ -15,7 +15,7 @@ func main() {
 	go compute(inCh, quit)
 
 	inCh <- building{
-		left:   0,
+		left:   1,
 		right:  15,
 		height: 3,
 	}
@@ -43,7 +43,7 @@ func compute(in <-chan building, quit chan<- interface{}) {
 			}
 		}
 	}
-	prev := -1
+	prev := 0
 	for i, v := range heights {
 		if v != prev {
 			fmt.Println(i, v)
